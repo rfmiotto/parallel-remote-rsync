@@ -62,7 +62,6 @@ rel_selected_files=(${selected_files[@]##$remote_dir})
 printf '%s\n' "${rel_selected_files[@]}" > transfer.log
 prefix='rsync -avzm --stats --relative --safe-links --ignore-existing --human-readable -e "ssh -q" '"$remote_serv"':'"$remote_dir./"
 suffix=" $local_dir"
-# paths="$remote_serv:$remote_dir{${rel_selected_files[@]}} $local_dir"
 sed -i -e "s~^~$prefix~" transfer.log
 sed -i -e "s~.*~&$suffix~" transfer.log
 
