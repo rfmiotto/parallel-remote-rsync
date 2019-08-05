@@ -55,7 +55,7 @@ ignore=("${ignore_formats[@]/#/${prefix}}") # include prefix
 
 # Search for all files but those whose formats were ignored
 selected_files=($(ssh -q $remote_serv find $remote_dir -type f ${ignore[@]}))
-rel_selected_files=(${selected_files[@]##$remote_dir})
+rel_selected_files=(${selected_files[@]##$remote_dir}) # relative path to files
 
 # Prepare "transfer.log" temporary file that specifies the commands to be used
 # in the GNU parallel.
