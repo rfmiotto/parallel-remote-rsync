@@ -28,7 +28,8 @@ Author: Renato Fuzaro Miotto              Date: Aug 04 2019
 remote_serv="user@server.edu"
 remote_dir="/home/miotto/teste_script"
 local_dir="/home/miotto/Desktop/TESTE_BASH/local"
-ignore_formats=(*.o *.mod *.a *.h *.cgns) # formats that won't be transfered
+ignore_files=(*.o *.mod *.a *.h *.cgns) # formats that won't be transfered
+nrstfiles=3 # number of last rstfiles to be transfered
 
 nthreads=4 # Number of parallel process
 
@@ -46,16 +47,25 @@ function adjust_format () {
 remote_dir=$(adjust_format $remote_dir)
 local_dir=$(adjust_format $local_dir)
 
+# Ignore all restart files for now and add only the desired ones later
+ignore_files+=(rstfile.*)
+rstfiles=($(ssh -q $remote_serv find $remote_dir -type f -name "rstfile.*" | sort -r | head -$nrstfiles))
+rel_rstfiles=(${rstfiles[@]##$remote_dir}) # relative path
+
 # Create an array to be expanded in the bash find command. This array specifies
 # that the formats passed in the input section of this script should be ignored
 # by the find command.
 prefix='! -name '
-ignore_formats=($(printf "\"%s\" " "${ignore_formats[@]}")) # add double quotes in each element
-ignore=("${ignore_formats[@]/#/${prefix}}") # include prefix
+ignore_files=($(printf "\"%s\" " "${ignore_files[@]}")) # add double quotes in each element
+ignore=("${ignore_files[@]/#/${prefix}}") # include prefix
 
 # Search for all files but those whose formats were ignored
 selected_files=($(ssh -q $remote_serv find $remote_dir -type f ${ignore[@]}))
-rel_selected_files=(${selected_files[@]##$remote_dir}) # relative path to files
+rel_selected_files=(${selected_files[@]##$remote_dir}) # relative path
+
+# Add the restart files to the selected files (relative path)
+rel_selected_files+=(${rel_rstfiles[@]})
+
 
 # Prepare "transfer.log" temporary file that specifies the commands to be used
 # in the GNU parallel.
@@ -66,3 +76,4 @@ sed -i -e "s~^~$prefix~" transfer.log
 sed -i -e "s~.*~&$suffix~" transfer.log
 
 cat transfer.log | parallel --will-cite -j $nthreads {} > result.log
+
