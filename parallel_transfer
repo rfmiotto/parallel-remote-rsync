@@ -73,10 +73,11 @@ rel_selected_files+=(${rel_rstfiles[@]})
 # in the GNU parallel.
 printf '%s\n' "${rel_selected_files[@]}" > transfer.log
 if [ $compress = true ]; then
-    prefix='rsync -avzm --stats --relative --safe-links --ignore-existing --human-readable -e "ssh -q" '"$remote_serv"':'"$remote_dir./"
+    flags='-avzm'
 else
-    prefix='rsync -avm --stats --relative --safe-links --ignore-existing --human-readable -e "ssh -q" '"$remote_serv"':'"$remote_dir./"
+    flags='-avm'
 fi
+prefix='rsync '"$flags"' --stats --relative --safe-links --ignore-existing --human-readable -e "ssh -q" '"$remote_serv"':'"$remote_dir./"
 suffix=" $local_dir"
 sed -i -e "s~^~$prefix~" transfer.log
 sed -i -e "s~.*~&$suffix~" transfer.log
