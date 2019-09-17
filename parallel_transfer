@@ -62,7 +62,8 @@ ignore_files=($(printf "\"%s\" " "${ignore_files[@]}")) # add double quotes in e
 ignore=("${ignore_files[@]/#/${prefix}}") # include prefix
 
 # Search for all files but those whose formats were ignored
-selected_files=($(ssh -q $remote_serv find $remote_dir -type f ${ignore[@]}))
+# Results are being sorted by modification time (oldest first)
+selected_files=($(ssh -q $remote_serv find $remote_dir -type f ${ignore[@]} | sort))
 rel_selected_files=(${selected_files[@]##$remote_dir}) # relative path
 
 # Add the restart files to the selected files (relative path)
