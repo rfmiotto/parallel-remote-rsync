@@ -28,7 +28,7 @@ Author: Renato Fuzaro Miotto              Date: Aug 04 2019
 remote_serv="user@server.edu"
 remote_dir="/home/miotto/teste_script"
 local_dir="/home/miotto/Desktop/TESTE_BASH/local"
-ignore_files=(*.o *.mod *.a *.h *.cgns) # formats that won't be transfered
+ignore_files=(*.o *.mod *.a *.h) # formats that won't be transfered
 nrstfiles=3 # number of last rstfiles to be transfered
 
 nthreads=4 # Number of parallel process
@@ -74,11 +74,11 @@ rel_selected_files+=(${rel_rstfiles[@]})
 # in the GNU parallel.
 printf '%s\n' "${rel_selected_files[@]}" > transfer.log
 if [ $compress = true ]; then
-    flags='-avzm'
+    flags='-azm -vv'
 else
-    flags='-avm'
+    flags='-am -vv'
 fi
-prefix='rsync '"$flags"' --stats --relative --safe-links --ignore-existing --human-readable -e "ssh -q" '"$remote_serv"':'"$remote_dir./"
+prefix='rsync '"$flags"' --stats --relative --safe-links --human-readable -e "ssh -q" '"$remote_serv"':'"$remote_dir./"
 suffix=" $local_dir"
 sed -i -e "s~^~$prefix~" transfer.log
 sed -i -e "s~.*~&$suffix~" transfer.log
