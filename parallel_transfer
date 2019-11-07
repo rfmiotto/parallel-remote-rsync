@@ -28,12 +28,13 @@ Author: Renato Fuzaro Miotto              Date: Aug 04 2019
 remote_serv="user@server.edu"
 remote_dir="/home/miotto/teste_script"
 local_dir="/home/miotto/Desktop/TESTE_BASH/local"
-ignore_files=(*.o *.mod *.a *.h) # formats that won't be transfered
+ignore_files=(*.o *.mod *.a *.h *.cgns) # formats that won't be transfered
 nrstfiles=3 # number of last rstfiles to be transfered
 
 nthreads=4 # Number of parallel process
 
-compress=false # set as true only if your bandwidth is really bad. Compression takes time. 
+compress=false # set as true only if your bandwidth is really bad. Compression takes time.
+oldest_1st=false # set as true to transfer data ranked by the oldest to the newest (use `false` otherwise)
 
 ################################################################################
 
@@ -51,7 +52,8 @@ local_dir=$(adjust_format $local_dir)
 
 # Ignore all restart files for now and add only the desired ones later
 ignore_files+=(rstfile.*)
-rstfiles=($(ssh -q $remote_serv find $remote_dir -type f -name "rstfile.*" | sort -r | head -$nrstfiles))
+# rstfiles=($(ssh -q $remote_serv find $remote_dir -type f -name "rstfile.*" | sort -r | head -$nrstfiles))
+rstfiles=($(ssh -q $remote_serv find $remote_dir -type f -name "rstfile.*" -exec ls -t {} + | head -$nrstfiles))
 rel_rstfiles=(${rstfiles[@]##$remote_dir}) # relative path
 
 # Create an array to be expanded in the bash find command. This array specifies
@@ -61,9 +63,15 @@ prefix='! -name '
 ignore_files=($(printf "\"%s\" " "${ignore_files[@]}")) # add double quotes in each element
 ignore=("${ignore_files[@]/#/${prefix}}") # include prefix
 
+# Flag to search for files based on last modified time
+if [ $oldest_1st = true ]; then
+    flags='-tr'
+else
+    flags='-t'
+fi
 # Search for all files but those whose formats were ignored
-# Results are being sorted by modification time (oldest first)
-selected_files=($(ssh -q $remote_serv find $remote_dir -type f ${ignore[@]} | sort))
+# selected_files=($(ssh -q $remote_serv find $remote_dir -type f ${ignore[@]} | sort))
+selected_files=($(ssh -q $remote_serv find $remote_dir -type f ${ignore[@]} -exec ls $flags {} +))
 rel_selected_files=(${selected_files[@]##$remote_dir}) # relative path
 
 # Add the restart files to the selected files (relative path)
@@ -84,4 +92,3 @@ sed -i -e "s~^~$prefix~" transfer.log
 sed -i -e "s~.*~&$suffix~" transfer.log
 
 cat transfer.log | parallel --will-cite -j $nthreads {} > result.log
-
